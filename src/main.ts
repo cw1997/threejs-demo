@@ -10,6 +10,8 @@ function renderCube() {
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(0, 0, 5);
   camera.lookAt(0, 0, 0);
+  const cameraHelper = new THREE.CameraHelper(camera);
+  scene.add(cameraHelper);
 
   const geometry = new THREE.BoxGeometry( 1, 1, 1 );
   const materials = [
@@ -24,7 +26,7 @@ function renderCube() {
   cube.castShadow = true;
   scene.add( cube );
 
-  const groundGeometry = new THREE.BoxGeometry(10, 10, 0.1); // 厚度更薄
+  const groundGeometry = new THREE.BoxGeometry(5, 5, 0.1); // 厚度更薄
   const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x0F0F0F, side: THREE.DoubleSide });
   const ground = new THREE.Mesh(groundGeometry, groundMaterial);
   ground.rotation.x = -Math.PI / 2;
@@ -33,7 +35,7 @@ function renderCube() {
   scene.add(ground);
 
   const pointLight = new THREE.PointLight(0xffffff, 1000, 100);
-  pointLight.position.set(-5, 5, 5); // 左上角
+  pointLight.position.set(-2, 2, 2); // 左上角
   pointLight.castShadow = true;
   scene.add(pointLight);
   const pointLightHelper = new THREE.PointLightHelper(pointLight);
