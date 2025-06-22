@@ -12,9 +12,10 @@ const container = document.getElementById('app');
 function renderCube() {
   const scene = new THREE.Scene();
 
-  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, 0, 5);
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10);
+  camera.position.set(1, 1, 5);
   camera.lookAt(0, 0, 0);
+
   const cameraHelper = new THREE.CameraHelper(camera);
   scene.add(cameraHelper);
 
@@ -78,6 +79,21 @@ function renderCube() {
   scene.add(ambientLight);
   // const ambientLightHelper = new THREE.AmbientLightHelper(ambientLight);
   // scene.add(ambientLightHelper);
+
+  // const gridHelper = new THREE.GridHelper( 10, 10 );
+  // scene.add( gridHelper );
+
+  const axesHelper = new THREE.AxesHelper( 50 );
+  scene.add( axesHelper );
+
+  const dir = new THREE.Vector3( 1, 1, 1 );
+  //normalize the direction vector (convert to vector of length 1)
+  dir.normalize();
+  const origin = new THREE.Vector3( 0, 0, 1 );
+  const length = 1;
+  const hex = 0xffff00;
+  const arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
+  scene.add( arrowHelper );
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, });
   renderer.setSize( window.innerWidth, window.innerHeight );
