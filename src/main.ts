@@ -31,15 +31,43 @@ function renderCube() {
   cube.castShadow = true;
   scene.add( cube );
 
-  const groundGeometry = new THREE.BoxGeometry(5, 5, 0.1); // 厚度更薄
-  const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x0F0F0F, side: THREE.DoubleSide });
-  const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+
+  const planeSize = 5;
+
+  const loader = new THREE.TextureLoader();
+  const texture = loader.load('/src/resources/images/checker.png');
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.magFilter = THREE.NearestFilter;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const repeats = planeSize;
+  texture.repeat.set(repeats, repeats);
+
+  const groundGeometry = new THREE.BoxGeometry(planeSize, planeSize, 0.1); // 厚度更薄
+  // const groundMaterial = new THREE.MeshPhongMaterial({ /*color: 0x0F0F0F,*/ map: texture, side: THREE.DoubleSide });
+  const ground = new THREE.Mesh(groundGeometry, [
+    new THREE.MeshStandardMaterial({ color: 0xF0F0F0, }), // front
+    new THREE.MeshStandardMaterial({ color: 0xF0F0F0, }), // back
+    new THREE.MeshStandardMaterial({ color: 0xF0F0F0, }), // right
+    new THREE.MeshStandardMaterial({ color: 0xF0F0F0, }), // left
+    new THREE.MeshStandardMaterial({ map: texture, metalness: 0.5, roughness: 0.5, }), // top
+    new THREE.MeshStandardMaterial({ map: texture, metalness: 0.5, roughness: 0.5, }), // bottom
+  ]);
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -1; // 向下移动 1 个单位
   ground.receiveShadow = true;
   scene.add(ground);
 
-  const pointLight = new THREE.PointLight(0xffffff, 1000, 100);
+  // const planeGeo = new THREE.PlaneGeometry(planeSize, planeSize);
+  // const planeMat = new THREE.MeshPhongMaterial({
+  //   map: texture,
+  //   side: THREE.DoubleSide,
+  // });
+  // const mesh = new THREE.Mesh(planeGeo, planeMat);
+  // mesh.rotation.x = Math.PI * -.5;
+  // scene.add(mesh);
+
+  const pointLight = new THREE.PointLight(0xffffff, 100, 100);
   pointLight.position.set(-2, 2, 2); // 左上角
   pointLight.castShadow = true;
   scene.add(pointLight);
@@ -51,7 +79,7 @@ function renderCube() {
   // const ambientLightHelper = new THREE.AmbientLightHelper(ambientLight);
   // scene.add(ambientLightHelper);
 
-  const renderer = new THREE.WebGLRenderer();
+  const renderer = new THREE.WebGLRenderer({ antialias: true, });
   renderer.setSize( window.innerWidth, window.innerHeight );
 
   // renderer.shadowMap.enabled = true;
