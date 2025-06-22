@@ -2,6 +2,8 @@ import Stats from 'stats.js';
 import './style.css'
 
 import * as THREE from 'three';
+import {Reflector} from "three/examples/jsm/objects/Reflector.js";
+import {OrbitControls} from "three/examples/jsm/controls/OrbitControls.js";
 
 const stats = new Stats()
 stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -12,11 +14,14 @@ const container = document.getElementById('app');
 function renderCube() {
   const scene = new THREE.Scene();
 
-  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10);
-  camera.position.set(1, 1, 5);
+  const cameraDistance = 5;
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
+  camera.position.set(cameraDistance / 2, cameraDistance / 2, cameraDistance);
   camera.lookAt(0, 0, 0);
 
   const cameraHelper = new THREE.CameraHelper(camera);
+  cameraHelper.matrixAutoUpdate = true
+  cameraHelper.castShadow = true;
   scene.add(cameraHelper);
 
   const geometry = new THREE.BoxGeometry( 1, 1, 1 );
@@ -30,6 +35,7 @@ function renderCube() {
   ];
   const cube = new THREE.Mesh( geometry, materials );
   cube.castShadow = true;
+  cube.position.set(0, 1, 0);
   scene.add( cube );
 
 
@@ -44,7 +50,7 @@ function renderCube() {
   const repeats = planeSize;
   texture.repeat.set(repeats, repeats);
 
-  const groundGeometry = new THREE.BoxGeometry(planeSize, planeSize, 0.1); // 厚度更薄
+  const groundGeometry = new THREE.BoxGeometry(planeSize, planeSize, 0.1);
   // const groundMaterial = new THREE.MeshPhongMaterial({ /*color: 0x0F0F0F,*/ map: texture, side: THREE.DoubleSide });
   const ground = new THREE.Mesh(groundGeometry, [
     new THREE.MeshStandardMaterial({ color: 0xF0F0F0, }), // front
@@ -54,10 +60,35 @@ function renderCube() {
     new THREE.MeshStandardMaterial({ map: texture, metalness: 0.5, roughness: 0.5, }), // top
     new THREE.MeshStandardMaterial({ map: texture, metalness: 0.5, roughness: 0.5, }), // bottom
   ]);
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -1; // 向下移动 1 个单位
+  ground.rotation.x = Math.PI / 2;
+  ground.position.y = -0.1;
   ground.receiveShadow = true;
   scene.add(ground);
+
+  const mirrorWidth = 5;
+  const mirrorHeight = 5;
+  const frameThickness = 0.2;
+  const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.7, roughness: 0.2 });
+
+  {
+    const frameGeo = new THREE.PlaneGeometry(mirrorWidth + frameThickness * 2, mirrorHeight + frameThickness * 2);
+    const frame = new THREE.Mesh(frameGeo, frameMaterial);
+    frame.position.set(0, 2, -5.01); // 稍微偏一点，避免 z-fighting
+    scene.add(frame);
+
+    const mirrorGeo = new THREE.PlaneGeometry(mirrorWidth, mirrorHeight);
+    const mirror = new Reflector(mirrorGeo, {
+      clipBias: 0.003,
+      textureWidth: window.innerWidth * window.devicePixelRatio,
+      textureHeight: window.innerHeight * window.devicePixelRatio,
+      color: 0x889999,
+    });
+    mirror.position.set(0, 2, -5);
+    mirror.rotation.y = 0; // 朝 +Z（默认）
+    scene.add(mirror);
+  }
+
+  scene.background = new THREE.Color(0xA0A0A0);
 
   // const planeGeo = new THREE.PlaneGeometry(planeSize, planeSize);
   // const planeMat = new THREE.MeshPhongMaterial({
@@ -68,34 +99,35 @@ function renderCube() {
   // mesh.rotation.x = Math.PI * -.5;
   // scene.add(mesh);
 
-  const pointLight = new THREE.PointLight(0xffffff, 100, 100);
+  const pointLight = new THREE.PointLight(0xFFFF00, 100, 1000);
   pointLight.position.set(-2, 2, 2); // 左上角
   pointLight.castShadow = true;
   scene.add(pointLight);
   const pointLightHelper = new THREE.PointLightHelper(pointLight);
+  // pointLightHelper.matrixAutoUpdate = true;
   scene.add(pointLightHelper);
 
-  const ambientLight = new THREE.AmbientLight(0xFFFFFF, 10); // 环境光
+  const ambientLight = new THREE.AmbientLight(0xFFFFFF, 5); // 环境光
   scene.add(ambientLight);
-  // const ambientLightHelper = new THREE.AmbientLightHelper(ambientLight);
-  // scene.add(ambientLightHelper);
 
-  // const gridHelper = new THREE.GridHelper( 10, 10 );
-  // scene.add( gridHelper );
+  const gridHelper = new THREE.GridHelper( 10, 10, 0x0000ff, 0x808080 );
+  scene.add( gridHelper );
 
-  const axesHelper = new THREE.AxesHelper( 50 );
+  const axesHelper = new THREE.AxesHelper( 10 );
+  axesHelper.matrixAutoUpdate = true;
   scene.add( axesHelper );
 
   const dir = new THREE.Vector3( 1, 1, 1 );
   //normalize the direction vector (convert to vector of length 1)
   dir.normalize();
-  const origin = new THREE.Vector3( 0, 0, 1 );
+  const origin = new THREE.Vector3( 0, 0, 0 );
   const length = 1;
   const hex = 0xffff00;
   const arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
+  arrowHelper.matrixAutoUpdate = true;
   scene.add( arrowHelper );
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize( window.innerWidth, window.innerHeight );
 
   // renderer.shadowMap.enabled = true;
@@ -103,25 +135,34 @@ function renderCube() {
 
   container && container.appendChild( renderer.domElement );
 
+  const controls = new OrbitControls(camera, renderer.domElement);
+
   let angle = 0; // 用于控制相机的旋转角度
 
   function animate() {
     stats.begin();
 
-    const offset = 0.01;
+    const offset = 0.02;
     cube.rotation.x += offset;
     cube.rotation.y += offset;
+    // cube.rotation.z += offset;
 
     angle += offset
-    const radius = 5; // 距离 cube 的半径
-    camera.position.x = radius * Math.cos(angle);
-    camera.position.z = radius * Math.sin(angle);
-    camera.lookAt(0, 0, 0); // 永远看着中心的 cube
+    const radius = 3; // 距离 cube 的半径
+    // camera.position.x = radius * Math.cos(angle);
+    // camera.position.z = radius * Math.sin(angle);
+    // camera.lookAt(0, 0, 0); // 永远看着中心的 cube
+
+    pointLight.position.x = radius * Math.cos(angle);
+    pointLight.position.z = radius * Math.sin(angle);
+
+    controls.update();
 
     renderer.render( scene, camera );
 
     stats.end();
   }
+  animate();
   renderer.setAnimationLoop( animate );
 }
 
