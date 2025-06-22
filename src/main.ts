@@ -1,6 +1,11 @@
+import Stats from 'stats.js';
 import './style.css'
 
 import * as THREE from 'three';
+
+const stats = new Stats()
+stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild(stats.dom)
 
 const container = document.getElementById('app');
 
@@ -57,6 +62,8 @@ function renderCube() {
   let angle = 0; // 用于控制相机的旋转角度
 
   function animate() {
+    stats.begin();
+
     const offset = 0.01;
     cube.rotation.x += offset;
     cube.rotation.y += offset;
@@ -68,11 +75,13 @@ function renderCube() {
     camera.lookAt(0, 0, 0); // 永远看着中心的 cube
 
     renderer.render( scene, camera );
+
+    stats.end();
   }
   renderer.setAnimationLoop( animate );
 }
 
-function renderPCB() {
+/*function renderPCB() {
   // 场景
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf0f0f0);
@@ -136,6 +145,6 @@ function renderPCB() {
   // }
   //
   // animate();
-}
+}*/
 
 renderCube();
